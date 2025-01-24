@@ -6,6 +6,7 @@ import com.example.candidate.entity.Experience;
 import com.example.candidate.entity.canExp;
 import com.example.candidate.service.CanService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
@@ -26,6 +27,9 @@ public class CanController {
     private CanService canService;
     @Autowired
     private com.example.candidate.repository.expRepo expRepo;
+
+    @Value("${file.upload-dir}")
+    private String resumeDir;
 
     @PostMapping("/save/candidate")
     public Candidate addCandidate(@RequestBody Candidate candidate) {
@@ -99,7 +103,7 @@ public class CanController {
     }
 
     @DeleteMapping("/delete/exp/{id}")
-    public void deleteExperience(@PathVariable int id) {
+    public void deleteExperience(@PathVariable int id) throws IOException {
         canService.deleteExperience(id);
     }
 
@@ -110,7 +114,7 @@ public class CanController {
 
     @GetMapping("/resume/{fileName}")
     public ResponseEntity<Resource> getResume(@PathVariable String fileName) throws IOException {
-        Path filePath = Paths.get("upload/resumes/" + fileName);
+        Path filePath = Paths.get(resumeDir + "/" + fileName);
         Resource resource = new UrlResource(filePath.toUri());
         System.out.println("Looking for file at: " + filePath.toString());
 

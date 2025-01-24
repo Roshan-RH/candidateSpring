@@ -7,6 +7,7 @@ import com.example.candidate.repository.CanRepo;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +31,9 @@ public class CanService {
 //    public Candidate saveCandidate(Candidate candidate) {
 //        return canRepo.save(candidate);
 //    }
+
+    @Value("${file.upload-dir}")
+    private String resumeDir;
 
     public Candidate saveCandidate(Candidate candidate) {
         Candidate savedCandidate = canRepo.save(candidate);
@@ -91,7 +95,7 @@ public class CanService {
     if (resume != null && !resume.isEmpty()) {
         String uploadDir = "upload/resumes/";
         String fileName = candidateId + "_" + resume.getOriginalFilename();
-        Path path = Paths.get(uploadDir + fileName);
+        Path path = Paths.get(resumeDir + "/" + fileName);
         Files.createDirectories(path.getParent());
 
         // Save file
@@ -114,7 +118,7 @@ public class CanService {
 
         String uploadDir = "upload/resumes/";
         String fileName = savedCandidate.getId() + "_" + file.getOriginalFilename();
-        Path path = Paths.get(uploadDir + fileName);
+        Path path = Paths.get(resumeDir + "/" + fileName);
         Files.createDirectories(path.getParent());
         Files.write(path, file.getBytes());
 
@@ -139,7 +143,15 @@ public class CanService {
     }
 
     @Transactional
-    public void deleteExperience(int id) {
+    public void deleteExperience(int id) throws IOException {
+        Experience experience = expRepo.findByCandidateId(id).orElseThrow();
+        String resume = experience.getResume();
+        if (resume != null && !resume.isEmpty()) {
+            Path resPath = Paths.get(resumeDir + "/" + resume);
+            if (Files.exists(resPath)) {
+                Files.delete(resPath);
+            }
+        }
         expRepo.deleteByCandidateId(id);
         canRepo.deleteById(id);
     }

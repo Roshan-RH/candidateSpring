@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CanRepo extends JpaRepository<Candidate, Integer> {
@@ -14,4 +15,10 @@ public interface CanRepo extends JpaRepository<Candidate, Integer> {
 
     void deleteById(int id);
     //@Query("SELECT p.id as id, p.firstName as firstName, p.age as age, e.graduation as graduation, p.gender as gender FROM Candidate c JOIN c.graduation")
+
+    Optional<Candidate> findByEmail(String email);
+    void deleteByEmail(String email);
+
+    boolean existsByEmail(String email);
+
 }

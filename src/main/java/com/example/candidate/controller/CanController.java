@@ -4,6 +4,7 @@ import com.example.candidate.entity.Candid;
 import com.example.candidate.entity.Candidate;
 import com.example.candidate.entity.Experience;
 import com.example.candidate.entity.canExp;
+import com.example.candidate.repository.CanRepo;
 import com.example.candidate.service.CanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +31,8 @@ public class CanController {
 
     @Value("${file.upload-dir}")
     private String resumeDir;
+    @Autowired
+    private CanRepo canRepo;
 
     @PostMapping("/save/candidate")
     public Candidate addCandidate(@RequestBody Candidate candidate) {
@@ -39,11 +42,13 @@ public class CanController {
     @PostMapping("save/exp")
     public ResponseEntity<?> saveExperience(@RequestPart("candidate") Candidate candidate, @RequestPart("file") MultipartFile file, @RequestParam("graduation") String graduation, @RequestParam("graduationYear") String graduationYear) {
         Map<String, String> response = new HashMap<>();
-        response.put("message", "success");
-        try {
-            // Save the candidate with experience (including the resume file)
-            canService.saveExp(candidate, file, graduation, graduationYear);
 
+        if(canRepo.existsByEmail(candidate.getEmail())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        try {
+            canService.saveExp(candidate, file, graduation, graduationYear);
+            response.put("message","Success");
             return ResponseEntity.ok(response);
         } catch (IOException e) {
             response.put("message", "error");
@@ -168,4 +173,23 @@ public class CanController {
         ce.setExperience(experience);
         return ResponseEntity.ok(ce);
     }
+
+    @GetMapping("/canExp/email/{id}")
+    public ResponseEntity<canExp> getCanExpEmail(@PathVariable String id) {
+        return ResponseEntity.ok(   canService.getCanExpByMail(id));
+    }
+
+    @DeleteMapping("/delete/email/{email}")
+    public ResponseEntity<Map<String, String>> deleteCandidateByEmail(@PathVariable String email) throws IOException {
+        canService.deleteByEmail(email);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Candidate and associated details deleted successfully!");
+        return ResponseEntity.ok(response);    }
+
+    @GetMapping("/check/mail/{email}")
+    public ResponseEntity<Boolean> checkMail(@PathVariable String email) {
+        boolean emailExists = canService.emailExists(email);
+        return ResponseEntity.ok(emailExists);
+    }
+
 }

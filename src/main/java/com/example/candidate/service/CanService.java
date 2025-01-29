@@ -3,6 +3,7 @@ package com.example.candidate.service;
 import com.example.candidate.entity.Candid;
 import com.example.candidate.entity.Candidate;
 import com.example.candidate.entity.Experience;
+import com.example.candidate.entity.canExp;
 import com.example.candidate.repository.CanRepo;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -114,28 +115,34 @@ public class CanService {
     }
 
     public void saveExp(Candidate candidate, MultipartFile file, String graduation, String graduationYear) throws IOException {
-        Candidate savedCandidate = canRepo.save(candidate);
 
-        String uploadDir = "upload/resumes/";
-        String fileName = savedCandidate.getId() + "_" + file.getOriginalFilename();
-        Path path = Paths.get(resumeDir + "/" + fileName);
-        Files.createDirectories(path.getParent());
-        Files.write(path, file.getBytes());
+        if(canRepo.existsByEmail(candidate.getEmail())) {
+            throw new IllegalArgumentException("Email already in use");
+        }
+        else {
+            Candidate savedCandidate = canRepo.save(candidate);
 
-        Experience experience = new Experience();
-        experience.setGraduation(graduation);
-        experience.setGraduationYear(graduationYear);
-        experience.setResume(fileName);
-        experience.setCandidate(savedCandidate); // Link experience to the candidate
+            String uploadDir = "upload/resumes/";
+            String fileName = savedCandidate.getId() + "_" + file.getOriginalFilename();
+            Path path = Paths.get(resumeDir + "/" + fileName);
+            Files.createDirectories(path.getParent());
+            Files.write(path, file.getBytes());
 
-        expRepo.save(experience);
+            Experience experience = new Experience();
+            experience.setGraduation(graduation);
+            experience.setGraduationYear(graduationYear);
+            experience.setResume(fileName);
+            experience.setCandidate(savedCandidate); // Link experience to the candidate
 
-        String subject = "Welcome to Candidate Portal";
-        String body = "Dear " + savedCandidate.getFirstName() + ",\n\n" +
-                "Thank you for registering. \nYour Candidate ID is: " + savedCandidate.getId() + ".\n\n" +
-                "Best Regards,\nCandidate Team";
+            expRepo.save(experience);
 
-        emailService.sendSimpleMail(savedCandidate.getEmail(), subject, body);
+            String subject = "Welcome to Candidate Portal";
+            String body = "Dear " + savedCandidate.getFirstName() + ",\n\n" +
+                    "Thank you for registering. \nYour Candidate ID is: " + savedCandidate.getId() + ".\n\n" +
+                    "Best Regards,\nCandidate Team";
+
+            emailService.sendSimpleMail(savedCandidate.getEmail(), subject, body);
+        }
     }
 
     public List<Candidate> findAllCandidates() {
@@ -160,5 +167,37 @@ public class CanService {
         Optional <Experience> experience = expRepo.findByCandidateId(id);
 
         return experience.orElseThrow(() -> new EntityNotFoundException("Experience not found for ID: " + id));
+    }
+
+    @Transactional
+    public void deleteByEmail(String email) throws IOException {
+        Candidate candidate =  canRepo.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("Candidate not found for email: " + email));
+        Experience experience = expRepo.findByCandidateId(candidate.getId()).orElseThrow();
+        String resume = experience.getResume();
+        if (resume != null && !resume.isEmpty()) {
+            Path resPath = Paths.get(resumeDir + "/" + resume);
+            if (Files.exists(resPath)) {
+                Files.delete(resPath);
+            }
+        }
+        expRepo.deleteByCandidateId(candidate.getId());
+        canRepo.deleteById(candidate.getId());
+
+
+    }
+
+    public canExp getCanExpByMail(String id) {
+        Candidate candidate = canRepo.findByEmail(id).orElseThrow();
+        Experience experience = expRepo.findByCandidateId(candidate.getId()).orElseThrow();
+
+        canExp exp = new canExp();
+        exp.setExperience(experience);
+        exp.setCandidate(candidate);
+
+        return exp;
+    }
+
+    public boolean emailExists(String email) {
+        return canRepo.existsByEmail(email);
     }
 }

@@ -9,4 +9,8 @@ public interface expRepo extends JpaRepository<Experience, Long> {
     Optional <Experience> findByCandidateId(int candidate_id);
 
     void deleteByCandidateId(int candid_id);
+
+    void deleteByCandidateEmail(String candidate_email);
+
+    Optional<Object> findByCandidateEmail(String candidate_email);
 }

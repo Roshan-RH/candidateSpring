@@ -7,10 +7,12 @@ import jakarta.persistence.*;
 public class Candidate {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String firstName;
     private String lastName;
+
+    @Column(unique=true, nullable=false)
     private String email;
     private String phone;
     private String city;

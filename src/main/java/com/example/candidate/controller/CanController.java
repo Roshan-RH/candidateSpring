@@ -19,9 +19,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+//"http://localhost:4200/"
 
 @RestController
-@CrossOrigin("http://localhost:4200/")
+@CrossOrigin("http://192.168.1.188")
 public class CanController {
 
     @Autowired
